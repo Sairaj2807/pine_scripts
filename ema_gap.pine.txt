@@ -1,0 +1,25 @@
+//@version=6
+strategy('EMA Gap Entry & Cross Exit Strategy', overlay = true)
+
+// Input for EMAs
+emaShort = ta.ema(close, 5)
+emaLong = ta.ema(close, 20)
+
+// Entry Conditions
+notTouchingEMA = high < emaShort and low < emaShort
+bullishClose = close > close[1]
+entryCondition = notTouchingEMA[1] and bullishClose
+
+// Exit Condition
+exitCondition = ta.crossunder(emaShort, emaLong)
+
+// Plotting EMAs
+plot(emaShort, color = color.orange, title = 'EMA 5')
+plot(emaLong, color = color.blue, title = 'EMA 20')
+
+// Strategy Logic
+if entryCondition
+    strategy.entry('Long', strategy.long)
+
+if exitCondition
+    strategy.close('Long')

@@ -1,0 +1,464 @@
+//@version=6
+indicator("HTF MACD & RSI", overlay=false)
+
+// Function to get MACD values for a higher timeframe
+get_htf_macd(source, fastLength, slowLength, signalSmoothing, htf) =>
+    [macdLine, signalLine, _] = ta.macd(request.security(syminfo.tickerid, htf, source, lookahead=barmerge.lookahead_on), fastLength, slowLength, signalSmoothing)
+    [macdLine, signalLine]
+
+// Function to get RSI value for a higher timeframe
+get_htf_rsi(source, length, htf) =>
+    ta.rsi(request.security(syminfo.tickerid, htf, source, lookahead=barmerge.lookahead_on), length)
+
+// Timeframes
+htf_5m = "5"
+htf_15m = "15"
+htf_1h = "60"
+htf_4h = "240"
+
+// MACD Settings
+fastLength = 12
+slowLength = 26
+signalSmoothing = 9
+
+// RSI Settings
+rsiLength = 14
+overbought = 70
+oversold = 30
+
+// Fetch MACD for HTFs
+[macd_5m, signal_5m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_5m)
+[macd_15m, signal_15m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_15m)
+[macd_1h, signal_1h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_1h)
+[macd_4h, signal_4h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_4h)
+
+// Fetch RSI for HTFs
+rsi_5m = get_htf_rsi(close, rsiLength, htf_5m)
+rsi_15m = get_htf_rsi(close, rsiLength, htf_15m)
+rsi_1h = get_htf_rsi(close, rsiLength, htf_1h)
+rsi_4h = get_htf_rsi(close, rsiLength, htf_4h)
+
+// MACD Conditions
+macd_above_zero = "Above Zero"
+macd_below_zero = "Below Zero"
+
+// Format display string
+label_txt = "5m  - MACD: " + str.tostring(macd_5m) + " (" + (macd_5m > 0 ? macd_above_zero : macd_below_zero) + ") | " +  "RSI: " + str.tostring(rsi_5m) + " (" + (rsi_5m > overbought ? "Overbought" : rsi_5m < oversold ? "Oversold" : "Neutral") + ")" + "\n" +     "15m - MACD: " + str.tostring(macd_15m) + " (" + (macd_15m > 0 ? macd_above_zero : macd_below_zero) + ") | " +     "RSI: " + str.tostring(rsi_15m) + " (" + (rsi_15m > overbought ? "Overbought" : rsi_15m < oversold ? "Oversold" : "Neutral") + ")" + "\n" +     "1h  - MACD: " + str.tostring(macd_1h) + " (" + (macd_1h > 0 ? macd_above_zero : macd_below_zero) + ") | " +  "RSI: " + str.tostring(rsi_1h) + " (" + (rsi_1h > overbought ? "Overbought" : rsi_1h < oversold ? "Oversold" : "Neutral") + ")" + "\n" +  "4h  - MACD: " + str.tostring(macd_4h) + " (" + (macd_4h > 0 ? macd_above_zero : macd_below_zero) + ") | " +     "RSI: " + str.tostring(rsi_4h) + " (" + (rsi_4h > overbought ? "Overbought" : rsi_4h < oversold ? "Oversold" : "Neutral") + ")"
+
+// Display as label
+label.new(x=bar_index, y=high, text=label_txt, color=color.white, textcolor=color.black, size=size.small, style=label.style_label_down)
+
+
+
+=================================  NEW Working with  table =================
+
+//@version=6
+indicator('HTF MACD & RSI', overlay = false)
+
+// Function to get MACD values for a higher timeframe
+get_htf_macd(source, fastLength, slowLength, signalSmoothing, htf) =>
+    [macdLine, signalLine, _] = ta.macd(request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on), fastLength, slowLength, signalSmoothing)
+    [macdLine, signalLine]
+
+// Function to get RSI value for a higher timeframe
+get_htf_rsi(source, length, htf) =>
+    ta.rsi(request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on), length)
+
+// Timeframes
+htf_5m = '5'
+htf_15m = '15'
+htf_1h = '60'
+htf_4h = '240'
+
+// MACD Settings
+fastLength = 12
+slowLength = 26
+signalSmoothing = 9
+
+// RSI Settings
+rsiLength = 14
+overbought = 70
+oversold = 30
+
+// Fetch MACD for HTFs
+[macd_5m, signal_5m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_5m)
+[macd_15m, signal_15m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_15m)
+[macd_1h, signal_1h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_1h)
+[macd_4h, signal_4h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_4h)
+
+// Fetch RSI for HTFs
+rsi_5m = get_htf_rsi(close, rsiLength, htf_5m)
+rsi_15m = get_htf_rsi(close, rsiLength, htf_15m)
+rsi_1h = get_htf_rsi(close, rsiLength, htf_1h)
+rsi_4h = get_htf_rsi(close, rsiLength, htf_4h)
+
+// Format values to two decimal places
+format_value(val) =>
+    str.tostring(val, '#.##')
+
+// Define table
+var table htf_table = table.new(position = position.top_right, columns = 3, rows = 5, border_width = 1)
+
+// Clear table each bar
+table.clear(htf_table, start_row = 0, start_column = 0)
+
+// Update table data
+table.cell(htf_table, 0, 0, 'Timeframe', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 1, 0, 'MACD', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 2, 0, 'RSI', text_color = color.white, bgcolor = color.blue)
+
+table.cell(htf_table, 0, 1, '5m')
+table.cell(htf_table, 1, 1, format_value(macd_5m) + (macd_5m > 0 ? ' (Above)' : ' (Below)'))
+table.cell(htf_table, 2, 1, format_value(rsi_5m) + (rsi_5m > overbought ? ' (Overbought)' : rsi_5m < oversold ? ' (Oversold)' : ' (Neutral)'))
+
+table.cell(htf_table, 0, 2, '15m')
+table.cell(htf_table, 1, 2, format_value(macd_15m) + (macd_15m > 0 ? ' (Above)' : ' (Below)'))
+table.cell(htf_table, 2, 2, format_value(rsi_15m) + (rsi_15m > overbought ? ' (Overbought)' : rsi_15m < oversold ? ' (Oversold)' : ' (Neutral)'))
+
+table.cell(htf_table, 0, 3, '1h')
+table.cell(htf_table, 1, 3, format_value(macd_1h) + (macd_1h > 0 ? ' (Above)' : ' (Below)'))
+table.cell(htf_table, 2, 3, format_value(rsi_1h) + (rsi_1h > overbought ? ' (Overbought)' : rsi_1h < oversold ? ' (Oversold)' : ' (Neutral)'))
+
+table.cell(htf_table, 0, 4, '4h')
+table.cell(htf_table, 1, 4, format_value(macd_4h) + (macd_4h > 0 ? ' (Above)' : ' (Below)'))
+table.cell(htf_table, 2, 4, format_value(rsi_4h) + (rsi_4h > overbought ? ' (Overbought)' : rsi_4h < oversold ? ' (Oversold)' : ' (Neutral)'))
+
+
+================================ macd rsi super trend ==========================
+
+//@version=6
+indicator('HTF MACD, RSI & Supertrend', overlay = false)
+
+// Function to get MACD values for a higher timeframe
+get_htf_macd(source, fastLength, slowLength, signalSmoothing, htf) =>
+    [macdLine, signalLine, _] = ta.macd(request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on), fastLength, slowLength, signalSmoothing)
+    [macdLine, signalLine]
+
+// Function to get RSI value for a higher timeframe
+get_htf_rsi(source, length, htf) =>
+    ta.rsi(request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on), length)
+
+// Function to get Supertrend data for a higher timeframe
+get_htf_supertrend(factor, atrLength, htf) =>
+    [superTrend, _] = ta.supertrend(factor, atrLength)
+    request.security(syminfo.tickerid, htf, superTrend, lookahead = barmerge.lookahead_on)
+
+// Timeframes
+htf_5m = '5'
+htf_15m = '15'
+htf_1h = '60'
+htf_4h = '240'
+
+// MACD Settings
+fastLength = 12
+slowLength = 26
+signalSmoothing = 9
+
+// RSI Settings
+rsiLength = 14
+overbought = 70
+oversold = 30
+
+// Supertrend Settings
+atrLength = 10
+factor = 3.0
+
+// Fetch MACD for HTFs
+[macd_5m, signal_5m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_5m)
+[macd_15m, signal_15m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_15m)
+[macd_1h, signal_1h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_1h)
+[macd_4h, signal_4h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_4h)
+
+// Fetch RSI for HTFs
+rsi_5m = get_htf_rsi(close, rsiLength, htf_5m)
+rsi_15m = get_htf_rsi(close, rsiLength, htf_15m)
+rsi_1h = get_htf_rsi(close, rsiLength, htf_1h)
+rsi_4h = get_htf_rsi(close, rsiLength, htf_4h)
+
+// Fetch Supertrend for HTFs
+supertrend_5m = get_htf_supertrend(factor, atrLength, htf_5m)
+supertrend_15m = get_htf_supertrend(factor, atrLength, htf_15m)
+supertrend_1h = get_htf_supertrend(factor, atrLength, htf_1h)
+supertrend_4h = get_htf_supertrend(factor, atrLength, htf_4h)
+
+// Trend direction based on Supertrend
+trend_5m = close > supertrend_5m ? 'Uptrend' : 'Downtrend'
+trend_15m = close > supertrend_15m ? 'Uptrend' : 'Downtrend'
+trend_1h = close > supertrend_1h ? 'Uptrend' : 'Downtrend'
+trend_4h = close > supertrend_4h ? 'Uptrend' : 'Downtrend'
+
+// Format values to two decimal places
+format_value(val) =>
+    str.tostring(val, '#.##')
+
+// Define table
+var table htf_table = table.new(position = position.top_right, columns = 5, rows = 5, border_width = 1)
+
+// Clear table each bar
+table.clear(htf_table, start_row = 0, start_column = 0)
+
+// Update table headers
+table.cell(htf_table, 0, 0, 'Timeframe', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 1, 0, 'MACD', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 2, 0, 'RSI', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 3, 0, 'Trend', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 4, 0, 'Support/Resistance', text_color = color.white, bgcolor = color.blue)
+
+// Update table data for each timeframe
+timeframes = array.new_string()
+array.push(timeframes, '5m')
+array.push(timeframes, '15m')
+array.push(timeframes, '1h')
+array.push(timeframes, '4h')
+
+macds = array.new_float()
+array.push(macds, macd_5m)
+array.push(macds, macd_15m)
+array.push(macds, macd_1h)
+array.push(macds, macd_4h)
+
+rsis = array.new_float()
+array.push(rsis, rsi_5m)
+array.push(rsis, rsi_15m)
+array.push(rsis, rsi_1h)
+array.push(rsis, rsi_4h)
+
+trends = array.new_string()
+array.push(trends, trend_5m)
+array.push(trends, trend_15m)
+array.push(trends, trend_1h)
+array.push(trends, trend_4h)
+
+supertrends = array.new_float()
+array.push(supertrends, supertrend_5m)
+array.push(supertrends, supertrend_15m)
+array.push(supertrends, supertrend_1h)
+array.push(supertrends, supertrend_4h)
+
+for i = 0 to 3
+    tf = array.get(timeframes, i)
+    macd = array.get(macds, i)
+    rsi = array.get(rsis, i)
+    trend = array.get(trends, i)
+    supertrend = array.get(supertrends, i)
+
+    table.cell(htf_table, 0, i + 1, tf)
+    table.cell(htf_table, 1, i + 1, format_value(macd) + (macd > 0 ? ' (Above)' : ' (Below)'))
+    table.cell(htf_table, 2, i + 1, format_value(rsi) + (rsi > overbought ? ' (Overbought)' : rsi < oversold ? ' (Oversold)' : ' (Neutral)'))
+    table.cell(htf_table, 3, i + 1, trend, text_color = trend == 'Uptrend' ? color.green : color.red)
+    table.cell(htf_table, 4, i + 1, 'S/R: ' + format_value(supertrend))
+
+
+============================= with support on chart =============================
+//@version=6
+indicator('HTF MACD, RSI & Supertrend', overlay = true)
+
+// Function to get MACD values for a higher timeframe
+get_htf_macd(source, fastLength, slowLength, signalSmoothing, htf) =>
+    [macdLine, signalLine, _] = ta.macd(request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on), fastLength, slowLength, signalSmoothing)
+    [macdLine, signalLine]
+
+// Function to get RSI value for a higher timeframe
+get_htf_rsi(source, length, htf) =>
+    ta.rsi(request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on), length)
+
+// Function to get Supertrend data for a higher timeframe
+get_htf_supertrend(factor, atrLength, htf) =>
+    [superTrend, _] = ta.supertrend(factor, atrLength)
+    request.security(syminfo.tickerid, htf, superTrend, lookahead = barmerge.lookahead_on)
+
+// Timeframes
+htf_5m = '5'
+htf_15m = '15'
+htf_1h = '60'
+htf_4h = '240'
+
+// MACD Settings
+fastLength = 12
+slowLength = 26
+signalSmoothing = 9
+
+// RSI Settings
+rsiLength = 14
+overbought = 70
+oversold = 30
+
+// Supertrend Settings
+atrLength = 10
+factor = 3.0
+
+// Fetch MACD for HTFs
+[macd_5m, signal_5m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_5m)
+[macd_15m, signal_15m] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_15m)
+[macd_1h, signal_1h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_1h)
+[macd_4h, signal_4h] = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_4h)
+
+// Fetch RSI for HTFs
+rsi_5m = get_htf_rsi(close, rsiLength, htf_5m)
+rsi_15m = get_htf_rsi(close, rsiLength, htf_15m)
+rsi_1h = get_htf_rsi(close, rsiLength, htf_1h)
+rsi_4h = get_htf_rsi(close, rsiLength, htf_4h)
+
+// Fetch Supertrend for HTFs
+supertrend_5m = get_htf_supertrend(factor, atrLength, htf_5m)
+supertrend_15m = get_htf_supertrend(factor, atrLength, htf_15m)
+supertrend_1h = get_htf_supertrend(factor, atrLength, htf_1h)
+supertrend_4h = get_htf_supertrend(factor, atrLength, htf_4h)
+
+// Plot support and resistance lines
+plot(supertrend_5m, color=color.blue, title='5m Support/Resistance', linewidth=2, style=plot.style_line)
+plot(supertrend_15m, color=color.green, title='15m Support/Resistance', linewidth=2, style=plot.style_line)
+plot(supertrend_1h, color=color.orange, title='1h Support/Resistance', linewidth=2, style=plot.style_line)
+plot(supertrend_4h, color=color.red, title='4h Support/Resistance', linewidth=2, style=plot.style_line)
+
+// Trend direction based on Supertrend
+trend_5m = close > supertrend_5m ? 'Uptrend' : 'Downtrend'
+trend_15m = close > supertrend_15m ? 'Uptrend' : 'Downtrend'
+trend_1h = close > supertrend_1h ? 'Uptrend' : 'Downtrend'
+trend_4h = close > supertrend_4h ? 'Uptrend' : 'Downtrend'
+
+// Format values to two decimal places
+format_value(val) =>
+    str.tostring(val, '#.##')
+
+// Define table
+var table htf_table = table.new(position = position.top_right, columns = 5, rows = 5, border_width = 1)
+
+// Clear table each bar
+table.clear(htf_table, start_row = 0, start_column = 0)
+
+// Update table headers
+table.cell(htf_table, 0, 0, 'Timeframe', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 1, 0, 'MACD', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 2, 0, 'RSI', text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 3, 0, 'Trend', text_color = color.white, bgcolor = color.blue)
+//table.cell(htf_table, 4, 0, 'Support/Resistance', text_color = color.white, bgcolor = color.blue)
+
+// Initialize arrays
+timeframes = array.from('5m', '15m', '1h', '4h')
+macds = array.from(macd_5m, macd_15m, macd_1h, macd_4h)
+rsis = array.from(rsi_5m, rsi_15m, rsi_1h, rsi_4h)
+trends = array.from(trend_5m, trend_15m, trend_1h, trend_4h)
+supertrends = array.from(supertrend_5m, supertrend_15m, supertrend_1h, supertrend_4h)
+
+for i = 0 to 3
+    tf = array.get(timeframes, i)
+    macd = array.get(macds, i)
+    rsi = array.get(rsis, i)
+    trend = array.get(trends, i)
+    supertrend = array.get(supertrends, i)
+
+    table.cell(htf_table, 0, i + 1, tf)
+    table.cell(htf_table, 1, i + 1, format_value(macd) + (macd > 0 ? ' (Above)' : ' (Below)'))
+    table.cell(htf_table, 2, i + 1, format_value(rsi) + (rsi > overbought ? ' (Overbought)' : rsi < oversold ? ' (Oversold)' : ' (Neutral)'))
+    table.cell(htf_table, 3, i + 1, trend, text_color = trend == 'Uptrend' ? color.green : color.red)
+    //table.cell(htf_table, 4, i + 1, 'S/R: ' + format_value(supertrend))
+ 
+
+
+======================= only with suggest and plot ==========================
+//@version=6
+indicator('HTF MACD, RSI & Supertrend', overlay = true)
+
+// Function to get MACD values for a higher timeframe
+get_htf_macd(source, fastLength, slowLength, signalSmoothing, htf) =>
+    macd_source = request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on)
+    [macdLine, signalLine, _] = ta.macd(macd_source, fastLength, slowLength, signalSmoothing)
+    macdLine
+
+// Function to get RSI value for a higher timeframe
+get_htf_rsi(source, length, htf) =>
+    rsi_source = request.security(syminfo.tickerid, htf, source, lookahead = barmerge.lookahead_on)
+    ta.rsi(rsi_source, length)
+
+// Function to get Supertrend data for a higher timeframe
+get_htf_supertrend(factor, atrLength, htf) =>
+    [superTrend, _] = ta.supertrend(factor, atrLength)
+    request.security(syminfo.tickerid, htf, superTrend, lookahead = barmerge.lookahead_on)
+
+// Timeframes
+htf_5m = "5"
+htf_15m = "15"
+htf_1h = "60"
+htf_4h = "240"
+
+// MACD Settings
+fastLength = 12
+slowLength = 26
+signalSmoothing = 9
+
+// RSI Settings
+rsiLength = 14
+overbought = 70
+oversold = 30
+
+// Supertrend Settings
+atrLength = 10
+factor = 3.0
+
+// Fetch MACD for HTFs
+macd_5m = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_5m)
+macd_15m = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_15m)
+macd_1h = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_1h)
+macd_4h = get_htf_macd(close, fastLength, slowLength, signalSmoothing, htf_4h)
+
+// Fetch RSI for HTFs
+rsi_5m = get_htf_rsi(close, rsiLength, htf_5m)
+rsi_15m = get_htf_rsi(close, rsiLength, htf_15m)
+rsi_1h = get_htf_rsi(close, rsiLength, htf_1h)
+rsi_4h = get_htf_rsi(close, rsiLength, htf_4h)
+
+// Fetch Supertrend for HTFs (Support/Resistance Levels)
+supertrend_5m = get_htf_supertrend(factor, atrLength, htf_5m)
+supertrend_15m = get_htf_supertrend(factor, atrLength, htf_15m)
+supertrend_1h = get_htf_supertrend(factor, atrLength, htf_1h)
+supertrend_4h = get_htf_supertrend(factor, atrLength, htf_4h)
+
+// Determine Trend
+trend_5m = close > supertrend_5m ? "Uptrend" : "Downtrend"
+trend_15m = close > supertrend_15m ? "Uptrend" : "Downtrend"
+trend_1h = close > supertrend_1h ? "Uptrend" : "Downtrend"
+trend_4h = close > supertrend_4h ? "Uptrend" : "Downtrend"
+
+// Plot Support and Resistance
+plot(supertrend_5m, color=color.blue, title="5m Support/Resistance", linewidth=2, style=plot.style_line)
+plot(supertrend_15m, color=color.green, title="15m Support/Resistance", linewidth=2, style=plot.style_line)
+plot(supertrend_1h, color=color.orange, title="1h Support/Resistance", linewidth=2, style=plot.style_line)
+plot(supertrend_4h, color=color.red, title="4h Support/Resistance", linewidth=2, style=plot.style_line)
+
+// Define table
+var table htf_table = table.new(position = position.top_right, columns = 4, rows = 5, border_width = 1)
+
+// Clear table each bar
+table.clear(htf_table, start_row = 0, start_column = 0)
+
+// Update table headers
+table.cell(htf_table, 0, 0, "Timeframe", text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 1, 0, "MACD", text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 2, 0, "RSI", text_color = color.white, bgcolor = color.blue)
+table.cell(htf_table, 3, 0, "Trend", text_color = color.white, bgcolor = color.blue)
+
+// Initialize arrays
+timeframes = array.from("5m", "15m", "1h", "4h")
+macds = array.from(macd_5m, macd_15m, macd_1h, macd_4h)
+rsis = array.from(rsi_5m, rsi_15m, rsi_1h, rsi_4h)
+trends = array.from(trend_5m, trend_15m, trend_1h, trend_4h)
+
+for i = 0 to 3
+    tf = array.get(timeframes, i)
+    macd = array.get(macds, i)
+    rsi = array.get(rsis, i)
+    trend = array.get(trends, i)
+
+    macd_status = macd > 0 ? "Above" : "Below"
+    rsi_status = rsi > overbought ? "Overbought" : rsi < oversold ? "Oversold" : "Neutral"
+    trend_color = trend == "Uptrend" ? color.green : color.red
+
+    table.cell(htf_table, 0, i + 1, tf)
+    table.cell(htf_table, 1, i + 1, macd_status)
+    table.cell(htf_table, 2, i + 1, rsi_status)
+    table.cell(htf_table, 3, i + 1, trend, text_color = trend_color)
+
+
+
+  

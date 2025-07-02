@@ -1,0 +1,37 @@
+//@version=6
+strategy('Consecutive Bullish MACD Strategy', overlay = true)
+
+// MACD Calculation
+[macdLine, signalLine, macdHist] = ta.macd(close, 12, 26, 9)
+
+// RSI Calculation
+rsi = ta.rsi(close, 14)
+
+// Detect Two Consecutive Bullish Candles
+bullishCandle1 = close[1] > open[1] and (close[1] - open[1]) / open[1] >= 0.02
+bullishCandle2 = close > open and (close - open) / open >= 0.02
+
+// MACD Histogram Condition
+macdCondition = macdHist[1] > 0.15 and macdHist > 0.15
+
+// RSI Condition (Avoid overbought entries)
+rsiCondition = rsi < 70
+
+// Entry Condition
+longCondition = bullishCandle1 and bullishCandle2 and macdCondition and rsiCondition
+if longCondition
+    strategy.entry('Long', strategy.long)
+    // Plot entry arrow
+    label = label.new(bar_index, low, 'Entry', color = color.green, textcolor = color.white, size = size.small, style = label.style_label_down)
+    label
+
+// Exit Conditions
+// Target profit at 4% above entry price
+// Trailing stop loss at 2% below highest price
+exitPrice = close * 1.04
+stopLossPrice = close * 0.98
+strategy.exit('Exit', from_entry = 'Long', trail_points = close * 0.02 / syminfo.mintick, trail_offset = close * 0.02 / syminfo.mintick, limit = exitPrice)
+
+// Plot target and stop loss lines
+plot(exitPrice, title = 'Target Price', color = color.blue, style = plot.style_line, linewidth = 2)
+plot(stopLossPrice, title = 'Stop Loss', color = color.red, style = plot.style_line, linewidth = 2)

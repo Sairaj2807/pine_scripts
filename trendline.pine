@@ -1,0 +1,99 @@
+//@version=6
+indicator('Advanced Trendlines', overlay = true, max_lines_count = 500)
+
+
+const string headerTrendlines = 'TRENDLINES SETTINGS'
+const string headerStyle = 'STYLE SETTINGS'
+const string headerBroken = 'BROKEN TRENDLINES SETTINGS'
+
+
+int pivotLen = input.int(15, 'Pivot Length', minval=1, maxval=500)
+int lookbackBars = input.int(300, 'Lookback Bars', minval=1, maxval=5000)
+float priceFilter = input.float(2.0, 'Price Threshold', minval=0.1, step=0.1)
+int maxLines = input.int(5, 'Max Lines per Pivot', minval=1)
+int slopeLimit = input.int(10, 'Max Slope Filter', minval=1)
+int slopeComparison = input.int(10, 'Slope Comparison Filter', minval=1)
+bool onlyDirectional = input.bool(false, 'Only Falling Highs and Rising Lows')
+
+
+color highColor = input.color(#ff9800, 'High Trendline Color')
+string highStyle = input.string('─', 'High Line Style', ['─', '┈', '╌'])
+int highWidth = input.int(2, 'High Line Width', minval=1, maxval=5)
+color lowColor = input.color(#4caf50, 'Low Trendline Color')
+string lowStyle = input.string('─', 'Low Line Style', ['─', '┈', '╌'])
+int lowWidth = input.int(2, 'Low Line Width', minval=1, maxval=5)
+string extensionType = input.string('Right', 'Line Extension', ['User', 'Right', 'Left', 'Both', 'None'])
+int extensionBars = input.int(100, 'Extension Bars', minval=1, maxval=500)
+
+color brokenHighColor = input.color(#f44336, 'Broken High Color')
+string brokenHighStyle = input.string('╌', 'Broken High Style', ['─', '┈', '╌'])
+int brokenHighWidth = input.int(1, 'Broken High Width', minval=1, maxval=5)
+color brokenLowColor = input.color(#233eaa, 'Broken Low Color')
+string brokenLowStyle = input.string('╌', 'Broken Low Style', ['─', '┈', '╌'])
+int brokenLowWidth = input.int(1, 'Broken Low Width', minval=1, maxval=5)
+int brokenPairs = input.int(1, 'Broken Trendline Pairs', minval=0, maxval=500)
+
+
+series float slopeThreshold = ta.atr(21) / slopeLimit
+
+series float highPivot = ta.pivothigh(pivotLen, pivotLen)
+series float lowPivot = ta.pivotlow(pivotLen, pivotLen)
+series bool newHigh = bool(highPivot)
+series bool newLow = bool(lowPivot)
+
+
+var array<float> highs = array.new_float()
+var array<int> highBars = array.new_int()
+var array<line> highLines = array.new_line()
+var array<line> brokenHighLines = array.new_line()
+var array<float> lows = array.new_float()
+var array<int> lowBars = array.new_int()
+var array<line> lowLines = array.new_line()
+var array<line> brokenLowLines = array.new_line()
+
+
+_extend(series string ext) => ext == 'Right' ? extend.right : ext == 'Left' ? extend.left : ext == 'Both' ? extend.both : extend.none
+
+_lineStyle(series string style) => style == '┈' ? line.style_dotted : style == '╌' ? line.style_dashed : line.style_solid
+
+_createTrendline(series int x1, series float y1, series int x2, series float y2, series color col, series string style, series int width, series bool broken) =>
+    line.new(x1, y1, broken ? x2 : x2 + extensionBars, broken ? y2 : y1 + ((y2 - y1) / (x2 - x1)) * extensionBars, xloc.bar_index, _extend(extensionType), col, _lineStyle(style), width)
+
+_drawTrendline(series bool detected, array<float> pivotArray, series float pivotVal, array<int> indexArray, array<line> trendArray, series color col, series string style, series int width) =>
+    if detected
+        array.unshift(pivotArray, pivotVal)
+        array.unshift(indexArray, bar_index - pivotLen)
+        if array.size(pivotArray) > 1
+            for i = 1 to math.min(array.size(pivotArray) - 1, maxLines + 1)
+                line trend = _createTrendline(array.get(indexArray, i), array.get(pivotArray, i), array.get(indexArray, 0), array.get(pivotArray, 0), col, style, width, false)
+                array.unshift(trendArray, trend)
+
+_cleanTrendlines(array<line> trendArray, array<line> brokenArray, series color col, series string style, series int width) =>
+    if array.size(trendArray) > 0  // Ensure the array has elements before accessing
+        for i = array.size(trendArray) - 1 to 0
+            if i >= 0 and i < array.size(trendArray)  // Prevent out-of-bounds access
+                line t = array.get(trendArray, i)
+                if line.get_price(t, bar_index) > priceFilter
+                    array.unshift(brokenArray, _createTrendline(line.get_x1(t), line.get_y1(t), bar_index, line.get_price(t, bar_index), col, style, width, true))
+                    line.delete(array.remove(trendArray, i))
+
+
+_deleteOldData(array<int> indexArray, array<float> pivotArray, array<line> trendArray) =>
+    if array.size(indexArray) > 0 
+        for i = array.size(indexArray) - 1 to 0
+            if array.get(indexArray, i) < bar_index - lookbackBars
+                array.remove(indexArray, i)
+                if array.size(pivotArray) > i 
+                    array.remove(pivotArray, i)
+                if array.size(trendArray) > i 
+                    line.delete(array.remove(trendArray, i))
+
+
+
+_drawTrendline(newHigh, highs, highPivot, highBars, highLines, highColor, highStyle, highWidth)
+_deleteOldData(highBars, highs, highLines)
+_cleanTrendlines(highLines, brokenHighLines, brokenHighColor, brokenHighStyle, brokenHighWidth)
+
+_drawTrendline(newLow, lows, lowPivot, lowBars, lowLines, lowColor, lowStyle, lowWidth)
+_deleteOldData(lowBars, lows, lowLines)
+_cleanTrendlines(lowLines, brokenLowLines, brokenLowColor, brokenLowStyle, brokenLowWidth)

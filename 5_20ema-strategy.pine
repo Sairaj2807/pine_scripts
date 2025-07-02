@@ -1,0 +1,42 @@
+//@version=5
+strategy("EMA Wick Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs ===
+emaFastLen = input.int(5, title="Fast EMA Length")
+emaSlowLen = input.int(20, title="Slow EMA Length")
+
+// === Calculations ===
+emaFast = ta.ema(close, emaFastLen)
+emaSlow = ta.ema(close, emaSlowLen)
+
+// === Trigger Candle Condition ===
+triggerCandle = close < emaFast and high < emaFast
+
+// === Entry Condition ===
+entryCondition = triggerCandle[1] and close > close[1]
+
+// === Store Entry Candle Low ===
+var float entryLow = na
+if entryCondition
+    entryLow := low[1]  // Store low of trigger candle (one before entry)
+
+// === Stop Loss Condition ===
+stopLossHit = not na(entryLow) and close < entryLow
+
+// === Exit Condition ===
+exitCondition = ta.crossunder(emaFast, emaSlow) or stopLossHit
+
+// === Plot EMAs ===
+plot(emaFast, title="EMA 5", color=color.orange)
+plot(emaSlow, title="EMA 20", color=color.blue)
+
+// === Strategy Logic ===
+if entryCondition
+    strategy.entry("Long", strategy.long, comment="Entry Above Trigger Candle")
+
+if exitCondition
+    strategy.close("Long", comment="Exit: EMA Cross or SL")
+
+// === Plot Signals ===
+plotshape(entryCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(exitCondition, title="Exit Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="EXIT")
